@@ -1,0 +1,3380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>饰品生产管理系统</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            padding: 15px; /* 减少整体页面内边距 */
+        }
+
+        .container {
+            max-width: 1500px; /* 稍微收窄容器最大宽度 */
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            padding: 20px; /* 减少头部内边距 */
+            margin-bottom: 20px; /* 减少头部底部外边距 */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px; /* 减少头部元素间距 */
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 70px; /* 稍微缩小logo */
+            height: 70px; /* 稍微缩小logo */
+            background-image: url('https://via.placeholder.com/80x80/8b5cf6/FFFFFF?text=LOGO');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 18px; /* 相应调整圆角 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* font-size: 40px;  移除，不再显示图标 */
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .header-info h1 {
+            font-size: 32px; /* 稍微缩小标题 */
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 3px; /* 减少标题底部间距 */
+        }
+
+        .header-info p {
+            font-size: 16px; /* 稍微缩小副标题 */
+            color: #6b7280;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* 减少右侧元素间距 */
+            flex-wrap: wrap;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .nav-tab {
+            padding: 12px 20px; /* 减少导航tab内边距 */
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 15px; /* 稍微缩小字体 */
+        }
+
+        .nav-tab.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .nav-tab.inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .nav-tab:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-orange { background: #f97316; color: white; }
+        .btn-purple { background: #8b5cf6; color: white; }
+
+        .export-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-btn {
+            padding: 12px 20px;
+            font-size: 14px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* 主表格页面样式 */
+        .main-table-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            padding: 20px 25px; /* 减少表格头部内边距 */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .table-header h2 {
+            font-size: 26px; /* 稍微缩小标题 */
+            font-weight: bold;
+        }
+
+        .table-header-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .add-product-btn, .batch-import-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 18px; /* 减少按钮内边距 */
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 13px; /* 稍微缩小字体 */
+        }
+
+        .add-product-btn:hover, .batch-import-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .production-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .production-table th {
+            background: #f8fafc;
+            padding: 15px 12px; /* 减少表头内边距 */
+            text-align: center;
+            font-weight: 700;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 15px; /* 稍微缩小字体 */
+        }
+
+        .production-table td {
+            padding: 18px 12px; /* 减少单元格内边距 */
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+        .production-table tbody tr {
+            transition: all 0.3s ease;
+            cursor: move;
+        }
+
+        .production-table tbody tr:hover {
+            background: #f9fafb;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .production-table tbody tr.sortable-drag {
+            opacity: 0.8;
+            transform: rotate(2deg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .product-cell {
+            text-align: left !important;
+            min-width: 280px; /* 再次缩小最小宽度，使 1:1 图片更小，与其他页面更均衡 */
+        }
+
+        .product-info {
+            /* 移除 flex 布局，内容将绝对定位 */
+            /* display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 6px; */
+            
+            background-size: contain; /* 修改为 contain，确保图片完整显示不裁剪 */
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            background-color: #f8fafc; 
+            /* 移除 padding，内容将通过自身 padding 或绝对定位控制间距 */
+            /* padding: 10px; */
+            border-radius: 10px;
+            /* 移除 min-height，改用 padding-bottom 控制宽高比 */
+            /* min-height: 250px; */
+
+            /* 新增：实现 1:1 宽高比的关键 */
+            height: 0; /* 消除自身高度 */
+            padding-bottom: 100%; /* 高度等于宽度 */
+            width: 100%; /* 确保宽度是父容器的 100% */
+
+            position: relative; 
+            overflow: hidden;
+            cursor: pointer; 
+        }
+
+        .product-drag-handle {
+            position: absolute;
+            top: 8px; /* 调整位置 */
+            right: 8px; /* 调整位置 */
+            z-index: 3;
+            background: rgba(255,255,255,0.7);
+            border-radius: 6px;
+            padding: 4px 6px; /* 减少内边距 */
+            width: auto;
+            height: auto;
+            color: #374151;
+            font-size: 13px; /* 缩小字体 */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+
+        .product-drag-handle:hover {
+            background: rgba(255,255,255,0.9);
+            transform: scale(1.05);
+        }
+
+        /* 移除 product-image 样式，因为该元素已被移除 */
+        /*
+        .product-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .product-image:hover {
+            transform: scale(1.05);
+        }
+        */
+
+        /* NEW: Content overlay for text on image (Now just for product name) */
+        .product-title-overlay {
+            position: absolute;
+            bottom: 0; /* 紧贴底部 */
+            left: 0; /* 紧贴左侧 */
+            right: 0; /* 紧贴右侧 */
+            background-color: rgba(0, 0, 0, 0.6); 
+            color: white; 
+            padding: 10px; /* 调整内边距，确保文字有空间 */
+            border-radius: 0 0 10px 10px; /* 底部圆角与父元素一致 */
+            font-size: 1.0em;
+            font-weight: bold;
+            z-index: 2; 
+            text-align: left;
+        }
+
+        .product-title-overlay .name {
+            font-size: 1.0em;
+            font-weight: bold;
+            color: white;
+            margin: 0; 
+            line-height: 1.2; /* 调整行高 */
+        }
+
+        .product-details {
+            /* 位于背景图片上方 */
+            background-color: rgba(255, 255, 255, 0.85); /* 略微不那么透明 */
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 5px; /* 与操作按钮之间的间距 */
+            position: relative; /* 确保 z-index 工作 */
+            z-index: 2; /* 确保在背景图片上方 */
+        }
+
+        .product-details .name {
+            font-weight: 700;
+            font-size: 16px; /* 稍微缩小字体 */
+            color: #1f2937;
+            margin-bottom: 3px; /* 更紧凑的间距 */
+        }
+
+        .product-details .category {
+            font-size: 13px; /* 稍微缩小字体 */
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 5px; /* 更紧凑的按钮间距 */
+            /* margin-top: 10px; */ /* 移除，通过 content-overlay 控制 */
+            flex-wrap: wrap;
+            background-color: rgba(255, 255, 255, 0.85); /* 半透明背景 */
+            padding: 6px 10px; /* 更紧凑的内边距 */
+            border-radius: 8px;
+            justify-content: flex-start;
+            position: relative;
+            z-index: 2;
+        }
+
+        .action-btn {
+            padding: 5px 10px; /* 进一步缩小按钮 */
+            border: none;
+            border-radius: 6px;
+            font-size: 11px; /* 缩小字体 */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .action-btn.edit {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .action-btn.link {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .action-btn.delete {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .step-cell {
+            min-width: 220px;
+            position: relative;
+        }
+        
+        /* 新增备注列样式 */
+        .remarks-cell {
+            min-width: 200px; /* 调整宽度，使其更紧凑 */
+        }
+
+        .step-content {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 4px;
+            transition: all 0.3s ease;
+            position: relative; /* 新增：确保内部绝对定位的图标相对其自身定位 */
+        }
+
+        .step-content:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+        }
+
+        .step-emoji {
+            font-size: 28px; /* 缩小emoji字体 */
+            margin-bottom: 8px; /* 减少间距 */
+        }
+
+        .step-name {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px; /* 减少间距 */
+            font-size: 13px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px; /* 减少间距 */
+            margin-bottom: 12px; /* 减少间距 */
+        }
+
+        /* 移除加减按钮的样式 */
+        /* .qty-btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .qty-btn.minus {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .qty-btn.plus {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .qty-btn:hover {
+            transform: scale(1.1);
+        } */
+
+        .quantity-display {
+            min-width: 50px; /* 缩小最小宽度 */
+            font-size: 20px; /* 缩小字体 */
+            font-weight: bold;
+            color: #1f2937;
+            cursor: pointer;
+            padding: 3px 8px; /* 减少内边距 */
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .quantity-display:hover {
+            background: #e0e7ff;
+            transform: scale(1.05);
+        }
+
+        .date-info {
+            font-size: 11px; /* 缩小字体 */
+            color: #6b7280;
+            margin-top: 8px; /* 减少间距 */
+        }
+
+        .edit-icon {
+            position: absolute;
+            top: 4px; /* 调整定位，更贴近角落 */
+            right: 4px; /* 调整定位，更贴近角落 */
+            background: white;
+            border: none;
+            border-radius: 5px;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 13px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 10; /* 确保图标在最上层 */
+        }
+
+        .edit-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        }
+
+        /* 加工和成品细分样式 */
+        .processing-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px; /* 减少间距 */
+            margin-bottom: 12px; /* 减少间距 */
+        }
+
+        .processing-item {
+            text-align: center;
+            padding: 8px; /* 减少内边距 */
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb; /* 稍微缩小边框 */
+        }
+
+        .processing-label {
+            font-size: 11px; /* 缩小字体 */
+            color: #6b7280;
+            margin-bottom: 3px; /* 减少间距 */
+        }
+
+        .processing-quantity {
+            font-size: 16px; /* 缩小字体 */
+            font-weight: bold;
+            color: #1f2937;
+            cursor: pointer;
+            padding: 1px 5px; /* 减少内边距 */
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+        .processing-quantity:hover {
+            background: #e0e7ff;
+        }
+
+        /* 移除加工和成品按钮的样式 */
+        /* .processing-controls {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .processing-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .processing-btn.minus {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .processing-btn.plus {
+            background: #dcfce7;
+            color: #16a34a;
+        } */
+
+        /* 总数显示样式 */
+        .total-display {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            padding: 8px; /* 减少内边距 */
+            border-radius: 6px;
+            text-align: center;
+            margin-top: 12px; /* 减少间距 */
+            font-weight: bold;
+        }
+
+        .total-number {
+            font-size: 18px; /* 缩小字体 */
+            margin-bottom: 2px;
+        }
+
+        .total-label {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        /* 原材料细分样式 - 优化文字大小 */
+        .materials-list {
+            max-height: 200px; /* 稍微缩小最大高度 */
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .material-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px; /* 减少内边距 */
+            margin-bottom: 8px; /* 减少间距 */
+            background: white;
+            border-radius: 8px; /* 稍微缩小圆角 */
+            border-left: 4px solid #e5e7eb; /* 稍微缩小边框厚度 */
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            position: relative;
+        }
+
+        .material-item.need-restock {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+            animation: pulse 2s infinite;
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.2);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        .material-info {
+            flex: 1;
+        }
+
+        /* 重点优化：原材料名称文字 */
+        .material-name {
+            font-weight: 800; 
+            font-size: 16px; /* 稍微缩小字体 */
+            color: #1a202c; 
+            margin-bottom: 0px; 
+            letter-spacing: 0.2px; /* 稍微缩小字间距 */
+            line-height: 1.2; /* 稍微缩小行高 */
+            text-shadow: 0 1px 1px rgba(0,0,0,0.03);
+        }
+
+        /* 移除原材料数量的样式 */
+        .material-quantity {
+            /* font-size: 15px; 
+            color: #4a5568; 
+            font-weight: 600; 
+            letter-spacing: 0.2px; */
+            display: none;
+        }
+
+        .restock-badge {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 5px 10px; /* 减少内边距 */
+            border-radius: 12px; /* 稍微缩小圆角 */
+            font-size: 11px; /* 稍微缩小字体 */
+            font-weight: 800;
+            white-space: nowrap;
+            box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
+            animation: glow 2s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); }
+            to { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5); }
+        }
+
+        /* 数据分析页面样式 - 全面优化 */
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr; /* 稍微缩小最小宽度 */
+            gap: 20px; /* 减少间距 */
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 20px; /* 稍微缩小圆角 */
+            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+            padding: 25px; /* 减少内边距 */
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px; /* 稍微缩小高度 */
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px); /* 减少位移 */
+            box-shadow: 0 25px 70px rgba(0,0,0,0.1);
+        }
+
+        .chart-card:hover::before {
+            opacity: 1;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* 减少间距 */
+            margin-bottom: 20px; /* 减少间距 */
+            padding-bottom: 15px; /* 减少内边距 */
+            border-bottom: 1px solid #f1f5f9; /* 稍微缩小边框 */
+        }
+
+        .chart-icon {
+            width: 50px; /* 缩小图标 */
+            height: 50px; /* 缩小图标 */
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px; /* 缩小字体 */
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            filter: brightness(1.2);
+            transform: scale(0.8);
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        .chart-icon.blue { 
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+        }
+        .chart-icon.green { 
+            background: linear-gradient(135deg, #10b981, #047857);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+        .chart-icon.purple { 
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+        }
+        .chart-icon.orange { 
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .chart-title {
+            font-size: 20px; /* 缩小字体 */
+            font-weight: 800;
+            color: #1f2937;
+            margin-bottom: 5px; /* 减少间距 */
+            background: linear-gradient(135deg, #1f2937, #4b5563);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .chart-subtitle {
+            font-size: 14px; /* 缩小字体 */
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .chart-content {
+            position: relative;
+            height: 280px; /* 缩小高度 */
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px; /* 减少间距 */
+            margin-top: 20px; /* 减少间距 */
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px; /* 减少内边距 */
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 14px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px); /* 减少位移 */
+            border-color: #3b82f6;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        }
+
+        .stat-item:hover::before {
+            opacity: 0.05;
+        }
+
+        .stat-number {
+            font-size: 28px; /* 缩小字体 */
+            font-weight: 900;
+            background: linear-gradient(135deg, #1f2937, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px; /* 减少间距 */
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-label {
+            font-size: 14px; /* 缩小字体 */
+            color: #6b7280;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px; /* 缩小高度 */
+            background: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 12px 0; /* 减少间距 */
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transition: width 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .material-status-list {
+            max-height: 250px; /* 稍微缩小最大高度 */
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .material-status-list::-webkit-scrollbar {
+            width: 5px; /* 缩小滚动条宽度 */
+        }
+
+        .material-status-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .material-status-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .material-status-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .material-status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0; /* 减少内边距 */
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+        }
+
+        .material-status-item:last-child {
+            border-bottom: none;
+        }
+
+        .material-status-item:hover {
+            background: #f8fafc;
+            padding-left: 8px; /* 减少位移 */
+            margin: 0 -8px;
+            border-radius: 6px;
+        }
+
+        .status-indicator {
+            width: 12px; /* 缩小指示器 */
+            height: 12px; /* 缩小指示器 */
+            border-radius: 50%;
+            margin-right: 10px;
+            position: relative;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.8);
+        }
+
+        .status-indicator.good { 
+            background: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        .status-indicator.warning { 
+            background: #f59e0b;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+        }
+        .status-indicator.danger { 
+            background: #ef4444;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+            animation: dangerPulse 2s infinite;
+        }
+
+        @keyframes dangerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* 趋势卡片 */
+        .trend-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* 稍微缩小最小宽度 */
+            gap: 15px; /* 减少间距 */
+            margin-bottom: 20px;
+        }
+
+        .trend-card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px; /* 减少内边距 */
+            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border: 1px solid #f1f5f9;
+        }
+
+        .trend-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+        }
+
+        .trend-value {
+            font-size: 22px; /* 缩小字体 */
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 3px; /* 减少间距 */
+        }
+
+        .trend-label {
+            font-size: 13px; /* 缩小字体 */
+            color: #6b7280;
+            margin-bottom: 8px; /* 减少间距 */
+        }
+
+        .trend-change {
+            font-size: 11px; /* 缩小字体 */
+            font-weight: 600;
+            padding: 3px 6px; /* 减少内边距 */
+            border-radius: 5px;
+        }
+
+        .trend-change.positive {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .trend-change.negative {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .edit-modal-content {
+            background: white;
+            border-radius: 18px; /* 稍微缩小圆角 */
+            padding: 25px; /* 减少内边距 */
+            width: 90%;
+            max-width: 550px; /* 稍微缩小最大宽度 */
+            max-height: 85vh; /* 稍微增加高度，以在紧凑模式下容纳更多内容 */
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        .edit-modal h3 {
+            font-size: 22px; /* 缩小字体 */
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 15px; /* 减少间距 */
+        }
+
+        .form-group {
+            margin-bottom: 15px; /* 减少表单组间距 */
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px; /* 减少label间距 */
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px; /* 减少输入框内边距 */
+            border: 1px solid #e5e7eb; /* 稍微缩小边框 */
+            border-radius: 6px;
+            font-size: 15px; /* 稍微缩小字体 */
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* 备注文本域样式 */
+        #editRemarks {
+            min-height: 120px; /* 缩小最小高度 */
+            resize: vertical;
+        }
+
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px; /* 减少按钮间距 */
+            justify-content: flex-end;
+            margin-top: 20px; /* 减少顶部间距 */
+        }
+
+        .btn-cancel {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .btn-save {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* 图片上传样式 */
+        .image-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .image-upload-area:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+
+        .image-upload-area.has-image {
+            border-style: solid;
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .image-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 0 auto 10px;
+            display: block;
+        }
+
+        .upload-text {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .upload-text.success {
+            color: #10b981;
+        }
+
+        .materials-editor {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .material-editor-item {
+            display: grid;
+            /* 调整为只显示名称和补货 */
+            grid-template-columns: 2fr auto auto; 
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+
+        .add-material-btn {
+            background: #dcfce7;
+            color: #16a34a;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .add-material-btn:hover {
+            background: #bbf7d0;
+        }
+
+        .delete-material-btn {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .quick-edit-input {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            padding: 8px;
+            border: 2px solid #3b82f6;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            width: 80px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* 批量导入样式 */
+        .batch-import-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px dashed #d1d5db;
+        }
+
+        .import-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .import-help {
+            margin-top: 10px;
+            padding: 15px;
+            background: #e0f2fe;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #0369a1;
+        }
+
+        .import-example {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #fileInput, #imageUploadInput {
+            display: none;
+        }
+
+        @media (max-width: 1200px) {
+            .production-table {
+                font-size: 14px;
+            }
+            
+            .step-cell {
+                min-width: 150px; /* 适配平板时进一步缩小 */
+            }
+            
+            .remarks-cell { /* 适配平板 */
+                min-width: 150px;
+            }
+
+            .step-content {
+                padding: 15px;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .header-info h1 {
+                font-size: 24px;
+            }
+            
+            .main-table-container {
+                overflow-x: auto;
+            }
+            
+            .production-table {
+                min-width: 1000px;
+            }
+
+            .export-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .table-header-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .material-name {
+                font-size: 16px; /* 在移动端稍微减小字体 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo"></div> <!-- 移除图标文字 -->
+                <div class="header-info">
+                    <h1>饰品生产管理系统</h1>
+                    <p>智能化大屏生产控制中心 - 支持拖拽排序</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="nav-tabs">
+                    <button class="nav-tab active" onclick="switchPage('main')">📋 主表格</button>
+                    <button class="nav-tab inactive" onclick="switchPage('charts')">📊 数据分析</button>
+                </div>
+                <!-- 移除导出JSON和导入数据按钮 -->
+                <!-- <div class="export-group">
+                    <button class="btn btn-success export-btn" onclick="exportToExcel()">
+                        📊 导出Excel
+                    </button>
+                    <button class="btn btn-warning export-btn" onclick="exportData()">
+                        📤 导出JSON
+                    </button>
+                </div>
+                <label class="btn btn-primary" for="fileInput">
+                    📥 导入数据
+                </label>
+                <input type="file" id="fileInput" accept=".json" onchange="importData(event)"> -->
+            </div>
+        </div>
+
+        <!-- 主表格页面 -->
+        <div id="mainPage" class="page active">
+            <div class="main-table-container">
+                <div class="table-header">
+                    <h2>🏭 生产流程总览</h2>
+                    <div class="table-header-buttons">
+                        <button class="add-product-btn" onclick="addNewProduct()">
+                            ➕ 添加新产品
+                        </button>
+                        <button class="batch-import-btn" onclick="openBatchImportModal()">
+                            📦 批量导入商品
+                        </button>
+                    </div>
+                </div>
+                
+                <table class="production-table">
+                    <thead>
+                        <tr>
+                            <th>产品信息</th>
+                            <th>原材料采购</th>
+                            <th>加工</th> <!-- 修改文本 -->
+                            <th>成品</th> <!-- 修改文本 -->
+                            <th>备注</th> <!-- 新增列 -->
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody" class="sortable">
+                        <!-- 产品行将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 数据分析页面 -->
+        <div id="chartsPage" class="page">
+            <!-- 趋势卡片 -->
+            <div class="trend-cards" id="trendCards">
+                <!-- 趋势卡片将通过JavaScript动态生成 -->
+            </div>
+
+            <div class="charts-container">
+                <!-- 生产数量与库存概览 (Enhanced) -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-icon blue">📈</div>
+                        <div>
+                            <div class="chart-title">生产数量与库存概览</div> <!-- 更新标题 -->
+                            <div class="chart-subtitle">加工、成品与在制品数量分析</div> <!-- 更新副标题 -->
+                        </div>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 月库存变动曲线 (New Chart) -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-icon orange">📉</div>
+                        <div>
+                            <div class="chart-title">月度库存变动概览</div>
+                            <div class="chart-subtitle">加工量与成品量净变化趋势</div>
+                        </div>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="monthlyInventoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 材料库存状态 -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-icon purple">📦</div>
+                        <div>
+                            <div class="chart-title">材料库存状态</div>
+                            <div class="chart-subtitle">原材料储备情况监控</div>
+                        </div>
+                    </div>
+                    <div class="chart-content">
+                        <div class="material-status-list" id="materialStatusList">
+                            <!-- 材料状态列表 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 生产效率统计 -->
+                <!-- Removed this section as per user request -->
+
+                <!-- 综合数据面板 -->
+                <!-- Removed this section as per user request -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量导入模态框 -->
+    <div id="batchImportModal" class="edit-modal hidden">
+        <div class="edit-modal-content" style="max-width: 800px;">
+            <h3>批量导入商品信息</h3>
+            <div class="form-group">
+                <label>商品信息 (每行一个商品，格式：商品名称|类别|淘宝链接)</label>
+                <textarea id="batchImportText" class="import-textarea" placeholder="请输入商品信息，例如：
+精美钻石项链|项链|https://item.taobao.com/item.htm?id=123456
+时尚玫瑰金戒指|戒指|https://item.taobao.com/item.htm?id=123457
+优雅珍珠耳环|耳环|https://item.taobao.com/item.htm?id=123458"></textarea>
+            </div>
+            <div class="import-help">
+                <strong>导入格式说明：</strong>
+                <div class="import-example">
+商品名称|类别|淘宝链接
+商品名称|类别|淘宝链接（可选）
+商品名称|类别
+
+支持的分隔符：| （竖线）、, （逗号）、	 （制表符）
+链接字段可以为空，类别默认为"饰品"
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeBatchImportModal()">取消</button>
+                <button class="btn btn-save" onclick="processBatchImport()">导入商品</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要加工编辑模态框 -->
+    <div id="processingModal" class="edit-modal hidden">
+        <div class="edit-modal-content">
+            <h3 id="processingModalTitle">编辑加工</h3> <!-- 修改文本 -->
+            <div class="form-group">
+                <label>耳钩数量</label>
+                <input type="number" id="editEarHook" min="0">
+            </div>
+            <div class="form-group">
+                <label>耳夹数量</label>
+                <input type="number" id="editEarClip" min="0">
+            </div>
+            <div class="form-group">
+                <label>其他数量</label>
+                <input type="number" id="editOther" min="0">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeProcessingModal()">取消</button>
+                <button class="btn btn-save" onclick="saveProcessingEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 质量检测编辑模态框 -->
+    <div id="qualityModal" class="edit-modal hidden">
+        <div class="edit-modal-content">
+            <h3 id="qualityModalTitle">编辑成品</h3> <!-- 修改文本 -->
+            <div class="form-group">
+                <label>耳钩成品数量</label> <!-- 修改文本 -->
+                <input type="number" id="editQualityEarHook" min="0">
+            </div>
+            <div class="form-group">
+                <label>耳夹成品数量</label> <!-- 修改文本 -->
+                <input type="number" id="editQualityEarClip" min="0">
+            </div>
+            <div class="form-group">
+                <label>其他成品数量</label> <!-- 修改文本 -->
+                <input type="number" id="editQualityOther" min="0">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeQualityModal()">取消</button>
+                <button class="btn btn-save" onclick="saveQualityEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 原材料编辑模态框 -->
+    <div id="materialsModal" class="edit-modal hidden">
+        <div class="edit-modal-content">
+            <h3 id="materialsModalTitle">编辑原材料</h3>
+            <div class="materials-editor">
+                <div id="materialsEditorList">
+                    <!-- 材料编辑项将通过JavaScript生成 -->
+                </div>
+                <button class="add-material-btn" onclick="addMaterialItem()">➕ 添加材料</button>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeMaterialsModal()">取消</button>
+                <button class="btn btn-save" onclick="saveMaterialsEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 产品编辑模态框 -->
+    <div id="productEditModal" class="edit-modal hidden">
+        <div class="edit-modal-content">
+            <h3 id="productModalTitle">编辑产品</h3>
+            <div class="form-group">
+                <label>产品图片</label>
+                <div class="image-upload-area" onclick="triggerImageUpload()">
+                    <img id="imagePreview" class="image-preview hidden" />
+                    <div id="uploadText" class="upload-text">
+                        📸 点击上传产品图片<br>
+                        <small>支持 JPG、PNG 格式</small>
+                    </div>
+                </div>
+                <input type="file" id="imageUploadInput" accept="image/*" onchange="handleImageUpload(event)">
+            </div>
+            <div class="form-group">
+                <label>产品名称</label>
+                <input type="text" id="editProductName" placeholder="输入产品名称">
+            </div>
+            <div class="form-group">
+                <label>产品类别</label>
+                <input type="text" id="editProductCategory" placeholder="如：项链、戒指、耳环等">
+            </div>
+            <div class="form-group">
+                <label>产品状态</label>
+                <select id="editProductStatus">
+                    <option value="设计中">设计中</option>
+                    <option value="生产中">生产中</option>
+                    <option value="质检中">质检中</option>
+                    <option value="已完成">已完成</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>商品链接</label>
+                <input type="url" id="editProductUrl" placeholder="https://item.taobao.com/item.htm?id=...">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeProductEditModal()">取消</button>
+                <button class="btn btn-save" onclick="saveProductEdit()">保存</button>
+                <button class="btn btn-delete" onclick="deleteProductFromModal()">🗑️ 删除产品</button> <!-- 新增删除按钮 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 备注编辑模态框 -->
+    <div id="remarksModal" class="edit-modal hidden">
+        <div class="edit-modal-content">
+            <h3 id="remarksModalTitle">编辑备注</h3>
+            <div class="form-group">
+                <label>备注内容</label>
+                <textarea id="editRemarks" placeholder="请输入备注内容"></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeRemarksModal()">取消</button>
+                <button class="btn btn-save" onclick="saveRemarksEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局数据 - 增加更丰富的示例数据
+        let appData = {
+            products: [
+                {
+                    id: 1,
+                    name: '精美钻石项链',
+                    url: 'https://item.taobao.com/item.htm?id=836241173263',
+                    category: '项链',
+                    status: '生产中',
+                    image: '',
+                    order: 0,
+                    remarks: '急单，需优先完成原材料采购和加工。\n已与客户沟通细节。' // 添加备注字段
+                },
+                {
+                    id: 2,
+                    name: '时尚玫瑰金戒指',
+                    url: 'https://item.taobao.com/item.htm?id=123456789',
+                    category: '戒指',
+                    status: '已完成',
+                    image: '',
+                    order: 1,
+                    remarks: '已完成并发货，客户反馈良好。'
+                },
+                {
+                    id: 3,
+                    name: '优雅珍珠耳环',
+                    url: 'https://item.taobao.com/item.htm?id=987654321',
+                    category: '耳环',
+                    status: '质检中',
+                    image: '',
+                    order: 2,
+                    remarks: '珍珠光泽度需二次确认，可能需要重新抛光。'
+                },
+                {
+                    id: 4,
+                    name: '简约银手镯',
+                    url: 'https://item.taobao.com/item.htm?id=456789123',
+                    category: '手镯',
+                    status: '设计中',
+                    image: '',
+                    order: 3,
+                    remarks: '设计图初稿已出，等待客户确认。'
+                },
+                {
+                    id: 5,
+                    name: '复古翡翠吊坠',
+                    url: 'https://item.taobao.com/item.htm?id=789123456',
+                    category: '吊坠',
+                    status: '已完成',
+                    image: '',
+                    order: 4,
+                    remarks: '特殊定制款，附带鉴定证书。'
+                }
+            ],
+            productionSteps: {
+                1: [
+                    { 
+                        id: 1, 
+                        name: '原材料采购', 
+                        materials: [
+                            { name: '银线', needRestock: false }, // 移除数量
+                            { name: '钻石', needRestock: true },
+                            { name: '扣环', needRestock: false },
+                            { name: '包装盒', needRestock: false }
+                        ],
+                        date: '2024-06-15',
+                        emoji: '📦' 
+                    },
+                    { 
+                        id: 2, 
+                        name: '加工', // 修改文本
+                        processing: {
+                            earHook: 35,
+                            earClip: 45,
+                            other: 30
+                        },
+                        date: '2024-06-17', 
+                        emoji: '⚙️' 
+                    },
+                    { 
+                        id: 3, 
+                        name: '成品', // 修改文本
+                        quality: {
+                            earHook: 32,
+                            earClip: 42,
+                            other: 28
+                        },
+                        date: '2024-06-18', 
+                        emoji: '🔍' 
+                    }
+                ],
+                2: [
+                    { 
+                        id: 1, 
+                        name: '原材料采购', 
+                        materials: [
+                            { name: '玫瑰金', needRestock: false },
+                            { name: '宝石', needRestock: false },
+                            { name: '抛光材料', needRestock: true }
+                        ],
+                        date: '2024-06-10',
+                        emoji: '📦' 
+                    },
+                    { 
+                        id: 2, 
+                        name: '加工', 
+                        processing: {
+                            earHook: 25,
+                            earClip: 30,
+                            other: 15
+                        },
+                        date: '2024-06-12', 
+                        emoji: '⚙️' 
+                    },
+                    { 
+                        id: 3, 
+                        name: '成品', 
+                        quality: {
+                            earHook: 25,
+                            earClip: 30,
+                            other: 15
+                        },
+                        date: '2024-06-14', 
+                        emoji: '🔍' 
+                    }
+                ],
+                3: [
+                    { 
+                        id: 1, 
+                        name: '原材料采购', 
+                        materials: [
+                            { name: '珍珠', needRestock: false },
+                            { name: '银丝', needRestock: false },
+                            { name: '耳针', needRestock: false }
+                        ],
+                        date: '2024-06-08',
+                        emoji: '📦' 
+                    },
+                    { 
+                        id: 2, 
+                        name: '加工', 
+                        processing: {
+                            earHook: 40,
+                            earClip: 35,
+                            other: 25
+                        },
+                        date: '2024-06-10', 
+                        emoji: '⚙️' 
+                    },
+                    { 
+                        id: 3, 
+                        name: '成品', 
+                        quality: {
+                            earHook: 38,
+                            earClip: 33,
+                            other: 23
+                        },
+                        date: '2024-06-12', 
+                        emoji: '🔍' 
+                    }
+                ],
+                4: [
+                    { 
+                        id: 1, 
+                        name: '原材料采购', 
+                        materials: [
+                            { name: '银条', needRestock: false },
+                            { name: '雕刻工具', needRestock: true }
+                        ],
+                        date: '2024-06-16',
+                        emoji: '📦' 
+                    },
+                    { 
+                        id: 2, 
+                        name: '加工', 
+                        processing: {
+                            earHook: 0,
+                            earClip: 0,
+                            other: 20
+                        },
+                        date: '', 
+                        emoji: '⚙️' 
+                    },
+                    { 
+                        id: 3, 
+                        name: '成品', 
+                        quality: {
+                            earHook: 0,
+                            earClip: 0,
+                            other: 0
+                        },
+                        date: '', 
+                        emoji: '🔍' 
+                    }
+                ],
+                5: [
+                    { 
+                        id: 1, 
+                        name: '原材料采购', 
+                        materials: [
+                            { name: '翡翠原石', needRestock: false },
+                            { name: '金链', needRestock: false },
+                            { name: '精装盒', needRestock: false }
+                        ],
+                        date: '2024-06-05',
+                        emoji: '📦' 
+                    },
+                    { 
+                        id: 2, 
+                        name: '加工', 
+                        processing: {
+                            earHook: 0,
+                            earClip: 0,
+                            other: 30
+                        },
+                        date: '2024-06-08', 
+                        emoji: '⚙️' 
+                    },
+                    { 
+                        id: 3, 
+                        name: '成品', 
+                        quality: {
+                            earHook: 0,
+                            earClip: 0,
+                            other: 30
+                        },
+                        date: '2024-06-10', 
+                        emoji: '🔍' 
+                    }
+                ]
+            },
+            currentEditingStep: null,
+            currentEditingProduct: null,
+            currentEditingRemarksProductId: null // 新增备注编辑状态
+        };
+
+        // 快速编辑状态
+        let quickEditState = {
+            isEditing: false,
+            element: null,
+            originalValue: null
+        };
+
+        // 图表实例
+        let charts = {
+            progressChart: null,
+            // statusChart: null,
+            monthlyInventoryChart: null
+        };
+
+        // 拖拽排序实例
+        let sortable = null;
+
+        // 图表是否已初始化标志
+        let chartsInitialized = false;
+
+        // 初始化
+        function init() {
+            loadData();
+            initSortable();
+            updateUI();
+            setupEventListeners();
+            console.log('系统初始化完成');
+        }
+
+        // 初始化拖拽排序
+        function initSortable() {
+            const tbody = document.getElementById('productTableBody');
+            sortable = Sortable.create(tbody, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                handle: '.product-drag-handle',
+                onEnd: function (evt) {
+                    const oldIndex = evt.oldIndex;
+                    const newIndex = evt.newIndex;
+                    
+                    if (oldIndex !== newIndex) {
+                        // 更新产品数据顺序
+                        const movedProduct = appData.products.splice(oldIndex, 1)[0];
+                        appData.products.splice(newIndex, 0, movedProduct);
+                        
+                        // 更新order字段
+                        appData.products.forEach((product, index) => {
+                            product.order = index;
+                        });
+                        
+                        updateUI();
+                    }
+                }
+            });
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            document.addEventListener('click', (e) => {
+                if (quickEditState.isEditing && !e.target.classList.contains('quick-edit-input')) {
+                    cancelQuickEdit();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && quickEditState.isEditing) {
+                    cancelQuickEdit();
+                }
+            });
+        }
+
+        // 批量导入相关函数
+        function openBatchImportModal() {
+            document.getElementById('batchImportModal').classList.remove('hidden');
+            document.getElementById('batchImportText').value = '';
+        }
+
+        function closeBatchImportModal() {
+            document.getElementById('batchImportModal').classList.add('hidden');
+        }
+
+        function processBatchImport() {
+            const text = document.getElementById('batchImportText').value.trim();
+            if (!text) {
+                alert('请输入商品信息');
+                return;
+            }
+
+            const lines = text.split('\n').filter(line => line.trim());
+            let successCount = 0;
+            let errorLines = [];
+
+            lines.forEach((line, index) => {
+                try {
+                    // 支持多种分隔符
+                    let parts;
+                    if (line.includes('|')) {
+                        parts = line.split('|');
+                    } else if (line.includes(',')) {
+                        parts = line.split(',');
+                    } else if (line.includes('\t')) {
+                        parts = line.split('\t');
+                    } else {
+                        parts = [line]; // 只有产品名
+                    }
+
+                    parts = parts.map(part => part.trim()).filter(part => part);
+
+                    if (parts.length === 0) {
+                        return; // 跳过空行
+                    }
+
+                    const name = parts[0];
+                    const category = parts[1] || '饰品';
+                    const url = parts[2] || '';
+
+                    if (name) {
+                        const newId = Math.max(...appData.products.map(p => p.id), 0) + 1;
+                        const newProduct = {
+                            id: newId,
+                            name: name,
+                            url: url,
+                            category: category,
+                            status: '设计中',
+                            image: '',
+                            order: appData.products.length,
+                            remarks: '' // 为新产品添加备注字段
+                        };
+
+                        appData.products.push(newProduct);
+                        appData.productionSteps[newId] = [
+                            { id: 1, name: '原材料采购', materials: [], date: '', emoji: '📦' },
+                            { id: 2, name: '加工', processing: { earHook: 0, earClip: 0, other: 0 }, date: '', emoji: '⚙️' }, // 修改文本
+                            { id: 3, name: '成品', quality: { earHook: 0, earClip: 0, other: 0 }, date: '', emoji: '🔍' } // 修改文本
+                        ];
+
+                        successCount++;
+                    }
+                } catch (error) {
+                    errorLines.push(index + 1);
+                }
+            });
+
+            updateUI();
+            closeBatchImportModal();
+
+            let message = `成功导入 ${successCount} 个商品`;
+            if (errorLines.length > 0) {
+                message += `\n第 ${errorLines.join(', ')} 行格式错误，已跳过`;
+            }
+            alert(message);
+        }
+
+        // 删除产品
+        function deleteProduct(productId) {
+            if (confirm('确定要删除这个产品吗？这将同时删除所有相关的生产数据。')) {
+                const index = appData.products.findIndex(p => p.id === productId);
+                if (index !== -1) {
+                    appData.products.splice(index, 1);
+                    delete appData.productionSteps[productId];
+                    
+                    // 重新整理order
+                    appData.products.forEach((product, index) => {
+                        product.order = index;
+                    });
+                    
+                    updateUI();
+                }
+            }
+        }
+
+        // 初始化图表 - 优化版本
+        function initCharts() {
+            if (chartsInitialized) {
+                console.log('图表已初始化，跳过重复初始化');
+                return;
+            }
+
+            try {
+                console.log('开始初始化图表...');
+                
+                // 检查Chart.js是否可用
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js未加载');
+                    return;
+                }
+
+                // 生产数量与库存概览图表 (Enhanced progressChart)
+                const progressCanvas = document.getElementById('progressChart');
+                if (progressCanvas) {
+                    const progressCtx = progressCanvas.getContext('2d');
+                    charts.progressChart = new Chart(progressCtx, {
+                        type: 'bar', // 基本类型仍为柱状图
+                        data: {
+                            labels: [],
+                            datasets: [{
+                                label: '总加工量', // 更新标签
+                                data: [],
+                                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                borderWidth: 2,
+                                borderRadius: 8
+                            }, {
+                                label: '总成品量', // 更新标签
+                                data: [],
+                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                borderWidth: 2,
+                                borderRadius: 8
+                            }, {
+                                type: 'line', // 新增折线图数据集，用于显示在制品/库存
+                                label: '在制品/库存', 
+                                data: [],
+                                borderColor: 'rgba(245, 158, 11, 1)', // 橙色
+                                backgroundColor: 'rgba(245, 158, 11, 0.2)', // 浅橙色填充
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: 'rgba(245, 158, 11, 1)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                yAxisID: 'y', // 使用相同的Y轴
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(0,0,0,0.1)'
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('生产数量与库存概览图表初始化成功');
+                }
+
+                // 月度库存变动曲线图表 (New monthlyInventoryChart)
+                const monthlyInventoryCanvas = document.getElementById('monthlyInventoryChart');
+                if (monthlyInventoryCanvas) {
+                    const monthlyInventoryCtx = monthlyInventoryCanvas.getContext('2d');
+                    charts.monthlyInventoryChart = new Chart(monthlyInventoryCtx, {
+                        type: 'line',
+                        data: {
+                            labels: [], // Monthly labels
+                            datasets: [{
+                                label: '净库存变动 (加工 - 成品)',
+                                data: [],
+                                borderColor: 'rgba(239, 68, 68, 1)', // Red for change
+                                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(0,0,0,0.1)'
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('月度库存变动曲线图表初始化成功');
+                }
+
+                // 移除产品状态分布图表初始化
+                // const statusCanvas = document.getElementById('statusChart');
+                // if (statusCanvas) {
+                //     const statusCtx = statusCanvas.getContext('2d');
+                //     charts.statusChart = new Chart(statusCtx, {
+                //         type: 'doughnut',
+                //         data: {
+                //             labels: [], // 动态生成标签
+                //             datasets: [{
+                //                 data: [], // 动态生成数据
+                //                 backgroundColor: [], // 动态生成背景色
+                //                 borderColor: [], // 动态生成边框色
+                //                 borderWidth: 3,
+                //                 hoverOffset: 8
+                //             }]
+                //         },
+                //         options: {
+                //             responsive: true,
+                //             maintainAspectRatio: false,
+                //             plugins: {
+                //                 legend: {
+                //                     position: 'bottom',
+                //                     labels: {
+                //                         font: {
+                //                             size: 13,
+                //                             weight: 'bold'
+                //                         },
+                //                         padding: 15
+                //                     }
+                //                 }
+                //             }
+                //         }
+                //     });
+                //     console.log('产品状态分布图表初始化成功');
+                // }
+
+                chartsInitialized = true;
+                console.log('所有图表初始化完成');
+                
+                // 立即更新一次图表数据
+                updateCharts();
+
+            } catch (error) {
+                console.error('图表初始化失败:', error);
+            }
+        }
+
+        // 更新图表数据 - 优化版本
+        function updateCharts() {
+            if (!chartsInitialized) {
+                console.log('图表尚未初始化，开始初始化...');
+                initCharts();
+                return;
+            }
+
+            try {
+                console.log('开始更新图表数据...');
+                
+                // 按order排序
+                const sortedProducts = [...appData.products].sort((a, b) => (a.order || 0) - (b.order || 0));
+                
+                const productNames = sortedProducts.map(p => p.name);
+                const processedData = [];
+                const qualityData = [];
+                const inventoryData = []; // 新增：在制品/库存数据
+
+                sortedProducts.forEach(product => {
+                    const steps = appData.productionSteps[product.id] || [];
+                    
+                    // 统计加工和成品数据
+                    let totalProcessed = 0;
+                    let totalQuality = 0;
+                    
+                    steps.forEach(step => {
+                        if (step.processing) {
+                            totalProcessed += Object.values(step.processing).reduce((a, b) => a + b, 0);
+                        }
+                        if (step.quality) {
+                            totalQuality += Object.values(step.quality).reduce((a, b) => a + b, 0);
+                        }
+                    });
+                    
+                    processedData.push(totalProcessed);
+                    qualityData.push(totalQuality);
+                    inventoryData.push(totalProcessed - totalQuality); // 计算在制品/库存
+                    
+                    // 计算效率（基于加工数量的相对效率）- Removed
+                    
+                    // 计算成品通过率 - Removed
+                });
+
+                // Collect monthly data for inventory change chart
+                const monthlyData = {}; // { 'YYYY-MM': { processed: 0, quality: 0 } }
+
+                Object.values(appData.productionSteps).forEach(steps => {
+                    steps.forEach(step => {
+                        if (step.date) {
+                            const date = new Date(step.date);
+                            const yearMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                            
+                            if (!monthlyData[yearMonth]) {
+                                monthlyData[yearMonth] = { processed: 0, quality: 0 };
+                            }
+
+                            if (step.processing) {
+                                monthlyData[yearMonth].processed += Object.values(step.processing).reduce((a, b) => a + b, 0);
+                            }
+                            if (step.quality) {
+                                monthlyData[yearMonth].quality += Object.values(step.quality).reduce((a, b) => a + b, 0);
+                            }
+                        }
+                    });
+                });
+
+                const sortedMonths = Object.keys(monthlyData).sort();
+                const monthlyLabels = sortedMonths.map(month => month); // Use YYYY-MM as label
+                const monthlyInventoryChangeData = sortedMonths.map(month => {
+                    return monthlyData[month].processed - monthlyData[month].quality;
+                });
+
+                // Update Monthly Inventory Change Chart
+                if (charts.monthlyInventoryChart) {
+                    charts.monthlyInventoryChart.data.labels = monthlyLabels;
+                    charts.monthlyInventoryChart.data.datasets[0].data = monthlyInventoryChangeData;
+                    charts.monthlyInventoryChart.update('none');
+                    console.log('月度库存变动曲线图表更新完成');
+                }
+
+                // 更新生产数量与库存概览图表
+                if (charts.progressChart) {
+                    charts.progressChart.data.labels = productNames;
+                    charts.progressChart.data.datasets[0].data = processedData;
+                    charts.progressChart.data.datasets[1].data = qualityData;
+                    charts.progressChart.data.datasets[2].data = inventoryData; // 更新在制品/库存数据
+                    charts.progressChart.update('none');
+                    console.log('生产数量与库存概览图表更新完成');
+                }
+
+                // 更新效率图表 - Removed
+
+                // 更新材料状态列表
+                updateMaterialStatusList();
+
+                // 更新统计数据 - Removed
+
+                // 更新趋势卡片
+                updateTrendCards();
+
+                console.log('图表数据更新完成');
+
+            } catch (error) {
+                console.error('更新图表数据失败:', error);
+            }
+        }
+
+        // 更新趋势卡片
+        function updateTrendCards() {
+            const container = document.getElementById('trendCards');
+            
+            const totalProducts = appData.products.length;
+            
+            let totalProcessed = 0;
+            let totalQuality = 0;
+            Object.values(appData.productionSteps).forEach(steps => {
+                steps.forEach(step => {
+                    if (step.processing) {
+                        totalProcessed += Object.values(step.processing).reduce((a, b) => a + b, 0);
+                    }
+                    if (step.quality) {
+                        totalQuality += Object.values(step.quality).reduce((a, b) => a + b, 0);
+                    }
+                });
+            });
+
+            const currentInventory = totalProcessed - totalQuality;
+
+            container.innerHTML = `
+                <div class="trend-card">
+                    <div class="trend-value">${totalProducts}</div>
+                    <div class="trend-label">产品总数</div>
+                    <div class="trend-change positive">📈 稳定增长</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value">${totalProcessed}</div>
+                    <div class="trend-label">总加工量</div>
+                    <div class="trend-change positive">🚀 持续生产</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value">${totalQuality}</div>
+                    <div class="trend-label">成品总数</div>
+                    <div class="trend-change positive">✅ 已完成</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value">${currentInventory}</div>
+                    <div class="trend-label">在制品/库存</div>
+                    <div class="trend-change ${currentInventory >= 0 ? 'positive' : 'negative'}">
+                        ${currentInventory >= 0 ? '📦 待出库' : '⚠️ 库存预警'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 更新材料状态列表
+        function updateMaterialStatusList() {
+            const container = document.getElementById('materialStatusList');
+            const allMaterials = {};
+            
+            // 收集所有材料 (现在没有数量，无法计算总数量，但可以列出是否需要补货)
+            Object.values(appData.productionSteps).forEach(steps => {
+                const materialStep = steps.find(step => step.name === '原材料采购');
+                if (materialStep && materialStep.materials) {
+                    materialStep.materials.forEach(material => {
+                        // 暂时不基于数量判断，只根据needRestock
+                        if (!allMaterials[material.name]) {
+                            allMaterials[material.name] = {
+                                needRestock: false
+                            };
+                        }
+                        if (material.needRestock) {
+                            allMaterials[material.name].needRestock = true;
+                        }
+                    });
+                }
+            });
+
+            const materialsList = Object.entries(allMaterials).map(([name, data]) => {
+                // 如果原材料不需要数量，这里的判断逻辑可能需要调整，或者只显示是否需补货
+                // 这里暂时根据是否需要补货来判断状态
+                const status = data.needRestock ? 'danger' : 'good'; 
+                return { name, ...data, status };
+            }).sort((a,b) => a.name.localeCompare(b.name)); // 按名称排序，方便查看
+
+            if (materialsList.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #6b7280;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">暂无材料数据</div>
+                        <div style="font-size: 14px;">请在产品管理中添加原材料信息</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = materialsList.map(material => `
+                    <div class="material-status-item">
+                        <div style="display: flex; align-items: center;">
+                            <div class="status-indicator ${material.status}"></div>
+                            <span style="font-weight: 600; font-size: 15px;">${material.name}</span>
+                        </div>
+                        <span style="color: ${material.needRestock ? '#ef4444' : '#10b981'}; font-weight: 500;">
+                            ${material.needRestock ? '需补货' : '库存充足'}
+                        </span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 更新统计数据 - Removed
+        // function updateStatistics() {
+        //     const totalProducts = appData.products.length;
+        //     const completedProducts = appData.products.filter(p => p.status === '已完成').length;
+        //     
+        //     let totalProcessed = 0;
+        //     let qualityPassed = 0;
+        //     
+        //     Object.values(appData.productionSteps).forEach(steps => {
+        //         steps.forEach(step => {
+        //             if (step.processing) {
+        //                 totalProcessed += Object.values(step.processing).reduce((a, b) => a + b, 0);
+        //             }
+        //             if (step.quality) {
+        //                 qualityPassed += Object.values(step.quality).reduce((a, b) => a + b, 0);
+        //             }
+        //         });
+        //     });
+        //
+        //     document.getElementById('totalProducts').textContent = totalProducts;
+        //     document.getElementById('completedProducts').textContent = completedProducts;
+        //     document.getElementById('totalProcessed').textContent = totalProcessed;
+        //     document.getElementById('qualityPassed').textContent = qualityPassed;
+        //
+        //     // 更新进度条
+        //     const completedProgress = totalProducts > 0 ? (completedProducts / totalProducts * 100) : 0;
+        //     // totalProcessed 的基数可以调整，例如基于预期最大值
+        //     const processedProgress = totalProcessed > 0 ? Math.min(totalProcessed / 200 * 100, 100) : 0; 
+        //     const qualityProgress = totalProcessed > 0 ? (qualityPassed / totalProcessed * 100) : 0;
+        //
+        //     document.getElementById('completedProgress').style.width = completedProgress + '%';
+        //     document.getElementById('processedProgress').style.width = processedProgress + '%';
+        //     document.getElementById('qualityProgress').style.width = qualityProgress + '%';
+        // }
+
+        // Excel导出功能
+        function exportToExcel() {
+            try {
+                const workbook = XLSX.utils.book_new();
+                
+                // 产品信息工作表 - 按order排序
+                const sortedProducts = [...appData.products].sort((a, b) => (a.order || 0) - (b.order || 0));
+                const productData = sortedProducts.map((product, index) => ({
+                    '排序': index + 1,
+                    '产品ID': product.id,
+                    '产品名称': product.name,
+                    '产品类别': product.category,
+                    '产品状态': product.status,
+                    '商品链接': product.url || '无',
+                    '备注': product.remarks || '无' // 添加备注导出
+                }));
+                
+                const productSheet = XLSX.utils.json_to_sheet(productData);
+                XLSX.utils.book_append_sheet(workbook, productSheet, '产品信息');
+                
+                // 生产数据工作表
+                const productionData = [];
+                sortedProducts.forEach(product => {
+                    const steps = appData.productionSteps[product.id] || [];
+                    steps.forEach(step => {
+                        if (step.name === '原材料采购' && step.materials) {
+                            step.materials.forEach(material => {
+                                productionData.push({
+                                    '产品名称': product.name,
+                                    '工序': step.name,
+                                    '材料名称': material.name,
+                                    '数量': '无', // 原材料采购不需要数量，导出时可标记为无
+                                    '需要补货': material.needRestock ? '是' : '否',
+                                    '日期': step.date || '未设置'
+                                });
+                            });
+                        } else if (step.name === '加工' && step.processing) { // 修改文本
+                            Object.entries(step.processing).forEach(([type, quantity]) => {
+                                if (quantity > 0) {
+                                    productionData.push({
+                                        '产品名称': product.name,
+                                        '工序': step.name,
+                                        '类型': type === 'earHook' ? '耳钩' : type === 'earClip' ? '耳夹' : '其他',
+                                        '数量': quantity,
+                                        '日期': step.date || '未设置'
+                                    });
+                                }
+                            });
+                        } else if (step.name === '成品' && step.quality) { // 修改文本
+                            Object.entries(step.quality).forEach(([type, quantity]) => {
+                                if (quantity > 0) {
+                                    productionData.push({
+                                        '产品名称': product.name,
+                                        '工序': step.name,
+                                        '类型': type === 'earHook' ? '耳钩成品' : type === 'earClip' ? '耳夹成品' : '其他成品', // 修改文本
+                                        '数量': quantity,
+                                        '日期': step.date || '未设置'
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+                
+                const productionSheet = XLSX.utils.json_to_sheet(productionData);
+                XLSX.utils.book_append_sheet(workbook, productionSheet, '生产数据');
+                
+                // 统计数据工作表
+                const totalProducts = appData.products.length;
+                const completedProducts = appData.products.filter(p => p.status === '已完成').length;
+                let totalProcessed = 0;
+                let qualityPassed = 0;
+                
+                Object.values(appData.productionSteps).forEach(steps => {
+                    steps.forEach(step => {
+                        if (step.processing) {
+                            totalProcessed += Object.values(step.processing).reduce((a, b) => a + b, 0);
+                        }
+                        if (step.quality) {
+                            qualityPassed += Object.values(step.quality).reduce((a, b) => a + b, 0);
+                        }
+                    });
+                });
+
+                const statsData = [
+                    { '指标': '产品总数', '数值': totalProducts, '占比': '100%' },
+                    { '指标': '已完成产品', '数值': completedProducts, '占比': `${totalProducts > 0 ? (completedProducts/totalProducts*100).toFixed(1) : 0}%` },
+                    { '指标': '生产中产品', '数值': appData.products.filter(p => p.status === '生产中').length, '占比': `${totalProducts > 0 ? (appData.products.filter(p => p.status === '生产中').length/totalProducts*100).toFixed(1) : 0}%` },
+                    { '指标': '设计中产品', '数值': appData.products.filter(p => p.status === '设计中').length, '占比': `${totalProducts > 0 ? (appData.products.filter(p => p.status === '设计中').length/totalProducts*100).toFixed(1) : 0}%` },
+                    { '指标': '质检中产品', '数值': appData.products.filter(p => p.status === '质检中').length, '占比': `${totalProducts > 0 ? (appData.products.filter(p => p.status === '质检中').length/totalProducts*100).toFixed(1) : 0}%` },
+                    { '指标': '总加工数量', '数值': totalProcessed, '占比': '-' }, // 修改文本
+                    { '指标': '成品通过数量', '数值': qualityPassed, '占比': `${totalProcessed > 0 ? (qualityPassed/totalProcessed*100).toFixed(1) : 0}%` } // 修改文本
+                ];
+                
+                const statsSheet = XLSX.utils.json_to_sheet(statsData);
+                XLSX.utils.book_append_sheet(workbook, statsSheet, '统计数据');
+                
+                // 导出文件
+                const fileName = `饰品生产数据_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(workbook, fileName);
+                
+                alert('Excel文件导出成功！');
+            } catch (error) {
+                console.error('Excel导出失败:', error);
+                alert('Excel导出失败，请稍后重试！');
+            }
+        }
+
+        // 加载数据
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem('jewelryProductionSystemData');
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    appData = { ...appData, ...parsed };
+                    
+                    // 确保所有产品都有order和remarks字段
+                    appData.products.forEach((product, index) => {
+                        if (product.order === undefined) {
+                            product.order = index;
+                        }
+                        if (product.remarks === undefined) { // 为旧数据添加remarks字段
+                            product.remarks = '';
+                        }
+                    });
+                    
+                    // 按order排序
+                    appData.products.sort((a, b) => (a.order || 0) - (b.order || 0));
+                }
+            } catch (e) {
+                console.log('使用默认数据');
+            }
+        }
+
+        // 保存数据
+        function saveData() {
+            try {
+                localStorage.setItem('jewelryProductionSystemData', JSON.stringify(appData));
+            } catch (e) {
+                console.warn('保存失败');
+            }
+        }
+
+        // 更新UI
+        function updateUI() {
+            updateMainTable();
+            updateCharts();
+            saveData();
+        }
+
+        // 页面切换 - 优化版本
+        function switchPage(pageName) {
+            // 更新导航标签
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.className = 'nav-tab inactive';
+            });
+            event.target.className = 'nav-tab active';
+
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            if (pageName === 'main') {
+                document.getElementById('mainPage').classList.add('active');
+            } else if (pageName === 'charts') {
+                document.getElementById('chartsPage').classList.add('active');
+                // 延迟初始化和更新图表以确保容器已显示
+                setTimeout(() => {
+                    if (!chartsInitialized) {
+                        console.log('首次切换到图表页面，初始化图表');
+                        initCharts();
+                    } else {
+                        console.log('图表已初始化，更新数据');
+                        updateCharts();
+                    }
+                }, 100);
+            }
+        }
+
+        // 更新主表格
+        function updateMainTable() {
+            const tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = '';
+
+            // 按order排序
+            const sortedProducts = [...appData.products].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            sortedProducts.forEach(product => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-product-id', product.id);
+                const steps = appData.productionSteps[product.id] || [];
+                
+                // 找到对应的加工和成品步骤
+                const processingStep = steps.find(s => s.name === '加工');
+                const qualityStep = steps.find(s => s.name === '成品');
+
+                row.innerHTML = `
+                    <td class="product-cell">
+                        <div class="product-info" onclick="openProductEditModal(${product.id})" style="${product.image ? `background-image: url('${product.image}');` : ''}">
+                            <div class="product-drag-handle" title="拖拽以调整顺序">⋮⋮</div>
+                            <div class="product-title-overlay"> <!-- 新增标题包裹层 -->
+                                <div class="name">${product.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    ${generateMaterialsCell(product.id, steps.find(s => s.name === '原材料采购'))}
+                    ${generateProcessingCell(product.id, processingStep)}
+                    ${generateQualityCell(product.id, qualityStep)}
+                    ${generateRemarksCell(product.id, product.remarks)} <!-- 新增备注单元格 -->
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 生成步骤单元格 (保持不变，因为是通用的)
+        function generateStepCells(productId, steps) {
+            // 此函数在 updateMainTable 中被分解调用，不再需要
+            // 为了保持兼容性，注释掉或保持空实现，但实际上 updateMainTable 会直接调用 generateMaterialsCell 等
+            return ''; 
+        }
+
+        // 生成原材料采购单元格
+        function generateMaterialsCell(productId, step) {
+            if (!step) return `<td class="step-cell"></td>`; // 如果没有该步骤的数据，返回空单元格
+
+            const materialsHtml = step.materials ? step.materials.map(material => `
+                <div class="material-item ${material.needRestock ? 'need-restock' : ''}">
+                    <div class="material-info">
+                        <div class="material-name">${material.name}</div>
+                        <!-- 移除数量显示 -->
+                        <!-- <div class="material-quantity">数量: ${material.quantity}</div> -->
+                    </div>
+                    ${material.needRestock ? '<span class="restock-badge">需补货</span>' : ''}
+                </div>
+            `).join('') : '';
+
+            return `
+                <td class="step-cell">
+                    <div class="step-content">
+                        <button class="edit-icon" onclick="openMaterialsModal(${productId}, ${step.id})">✏️</button>
+                        <div class="step-emoji">${step.emoji}</div>
+                        <div class="step-name">${step.name}</div>
+                        <div class="materials-list">
+                            ${materialsHtml}
+                        </div>
+                        ${step.date ? `<div class="date-info">📅 ${step.date}</div>` : ''}
+                    </div>
+                </td>
+            `;
+        }
+
+        // 生成加工单元格
+        function generateProcessingCell(productId, step) {
+            if (!step) return `<td class="step-cell"></td>`; // 如果没有该步骤的数据，返回空单元格
+            const processing = step.processing || { earHook: 0, earClip: 0, other: 0 };
+            const total = processing.earHook + processing.earClip + processing.other;
+            
+            return `
+                <td class="step-cell">
+                    <div class="step-content">
+                        <button class="edit-icon" onclick="openProcessingModal(${productId}, ${step.id})">✏️</button>
+                        <div class="step-emoji">${step.emoji}</div>
+                        <div class="step-name">${step.name}</div>
+                        <div class="processing-details">
+                            <div class="processing-item">
+                                <div class="processing-label">耳钩</div>
+                                <div class="processing-quantity" onclick="startQuickEdit(this, ${productId}, ${step.id}, 'earHook', 'processing')">${processing.earHook}</div>
+                                <!-- 移除按钮 -->
+                                <!-- <div class="processing-controls">
+                                    <button class="processing-btn minus" onclick="updateProcessingQuantity(${productId}, ${step.id}, 'earHook', -1)">-</button>
+                                    <button class="processing-btn plus" onclick="updateProcessingQuantity(${productId}, ${step.id}, 'earHook', 1)">+</button>
+                                </div> -->
+                            </div>
+                            <div class="processing-item">
+                                <div class="processing-label">耳夹</div>
+                                <div class="processing-quantity" onclick="startQuickEdit(this, ${productId}, ${step.id}, 'earClip', 'processing')">${processing.earClip}</div>
+                                <!-- 移除按钮 -->
+                                <!-- <div class="processing-controls">
+                                    <button class="processing-btn minus" onclick="updateProcessingQuantity(${productId}, ${step.id}, 'earClip', -1)">-</button>
+                                    <button class="processing-btn plus" onclick="updateProcessingQuantity(${productId}, ${step.id}, 'earClip', 1)">+</button>
+                                </div> -->
+                            </div>
+                            <div class="processing-item">
+                                <div class="processing-label">其他</div>
+                                <div class="processing-quantity" onclick="startQuickEdit(this, ${productId}, ${step.id}, 'other', 'processing')">${processing.other}</div>
+                                <!-- 移除按钮 -->
+                                <!-- <div class="processing-controls">
+                                    <button class="processing-btn minus" onclick="updateProcessingQuantity(${productId}, ${step.id}, 'other', -1)">-</button>
+                                    <button class="processing-btn plus" onclick="updateProcessingQuantity(${productId}, ${step.id}, 'other', 1)">+</button>
+                                </div> -->
+                            </div>
+                        </div>
+                        <div class="total-display">
+                            <div class="total-number">${total}</div>
+                            <div class="total-label">总数</div>
+                        </div>
+                        ${step.date ? `<div class="date-info">📅 ${step.date}</div>` : ''}
+                    </div>
+                </td>
+            `;
+        }
+
+        // 生成成品单元格
+        function generateQualityCell(productId, step) {
+            if (!step) return `<td class="step-cell"></td>`; // 如果没有该步骤的数据，返回空单元格
+            const quality = step.quality || { earHook: 0, earClip: 0, other: 0 };
+            const total = quality.earHook + quality.earClip + quality.other;
+            
+            return `
+                <td class="step-cell">
+                    <div class="step-content">
+                        <button class="edit-icon" onclick="openQualityModal(${productId}, ${step.id})">✏️</button>
+                        <div class="step-emoji">${step.emoji}</div>
+                        <div class="step-name">${step.name}</div>
+                        <div class="processing-details">
+                            <div class="processing-item">
+                                <div class="processing-label">耳钩</div>
+                                <div class="processing-quantity" onclick="startQuickEdit(this, ${productId}, ${step.id}, 'earHook', 'quality')">${quality.earHook}</div>
+                                <!-- 移除按钮 -->
+                                <!-- <div class="processing-controls">
+                                    <button class="processing-btn minus" onclick="updateQualityQuantity(${productId}, ${step.id}, 'earHook', -1)">-</button>
+                                    <button class="processing-btn plus" onclick="updateQualityQuantity(${productId}, ${step.id}, 'earHook', 1)">+</button>
+                                </div> -->
+                            </div>
+                            <div class="processing-item">
+                                <div class="processing-label">耳夹</div>
+                                <div class="processing-quantity" onclick="startQuickEdit(this, ${productId}, ${step.id}, 'earClip', 'quality')">${quality.earClip}</div>
+                                <!-- 移除按钮 -->
+                                <!-- <div class="processing-controls">
+                                    <button class="processing-btn minus" onclick="updateQualityQuantity(${productId}, ${step.id}, 'earClip', -1)">-</button>
+                                    <button class="processing-btn plus" onclick="updateQualityQuantity(${productId}, ${step.id}, 'earClip', 1)">+</button>
+                                </div> -->
+                            </div>
+                            <div class="processing-item">
+                                <div class="processing-label">其他</div>
+                                <div class="processing-quantity" onclick="startQuickEdit(this, ${productId}, ${step.id}, 'other', 'quality')">${quality.other}</div>
+                                <!-- 移除按钮 -->
+                                <!-- <div class="processing-controls">
+                                    <button class="processing-btn minus" onclick="updateQualityQuantity(${productId}, ${step.id}, 'other', -1)">-</button>
+                                    <button class="processing-btn plus" onclick="updateQualityQuantity(${productId}, ${step.id}, 'other', 1)">+</button>
+                                </div> -->
+                            </div>
+                        </div>
+                        <div class="total-display">
+                            <div class="total-number">${total}</div>
+                            <div class="total-label">总数</div>
+                        </div>
+                        ${step.date ? `<div class="date-info">📅 ${step.date}</div>` : ''}
+                    </div>
+                </td>
+            `;
+        }
+
+        // 生成备注单元格
+        function generateRemarksCell(productId, remarks) {
+            const displayRemarks = remarks ? remarks.split('\n').map(line => `<span>${line}</span>`).join('<br>') : '<span style="color: #ccc;">点击编辑备注</span>';
+
+            return `
+                <td class="step-cell remarks-cell">
+                    <div class="step-content" style="min-height: 150px;">
+                        <button class="edit-icon" onclick="openRemarksModal(${productId})">✏️</button>
+                        <div class="step-emoji">📝</div>
+                        <div class="step-name">备注</div>
+                        <div class="remarks-content" style="text-align: left; margin-top: 10px; font-size: 14px; color: #374151;">
+                            ${displayRemarks}
+                        </div>
+                    </div>
+                </td>
+            `;
+        }
+
+        // 开始快速编辑 (保留，用于加工和成品数量)
+        function startQuickEdit(element, productId, stepId, field, type) {
+            if (quickEditState.isEditing) return;
+
+            quickEditState.isEditing = true;
+            quickEditState.element = element;
+            quickEditState.originalValue = element.textContent;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'quick-edit-input';
+            input.value = element.textContent;
+            input.min = '0';
+
+            const rect = element.getBoundingClientRect();
+            input.style.position = 'fixed';
+            input.style.left = rect.left + 'px';
+            input.style.top = rect.top + 'px';
+            input.style.width = rect.width + 'px';
+            input.style.height = rect.height + 'px';
+
+            document.body.appendChild(input);
+            input.focus();
+            input.select();
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    confirmQuickEdit(productId, stepId, field, type, input.value);
+                } else if (e.key === 'Escape') {
+                    cancelQuickEdit();
+                }
+            });
+
+            input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (quickEditState.isEditing) {
+                        confirmQuickEdit(productId, stepId, field, type, input.value);
+                    }
+                }, 100);
+            });
+        }
+
+        // 确认快速编辑 (保留，用于加工和成品数量)
+        function confirmQuickEdit(productId, stepId, field, type, value) {
+            const newValue = Math.max(0, parseInt(value) || 0);
+            
+            const steps = appData.productionSteps[productId];
+            const step = steps.find(s => s.id === stepId);
+            
+            if (step) {
+                if (type === 'processing') {
+                    if (!step.processing) step.processing = { earHook: 0, earClip: 0, other: 0 };
+                    step.processing[field] = newValue;
+                } else if (type === 'quality') {
+                    if (!step.quality) step.quality = { earHook: 0, earClip: 0, other: 0 };
+                    step.quality[field] = newValue;
+                }
+                
+                // 自动更新日期
+                if (newValue > 0 && !step.date) {
+                    step.date = new Date().toISOString().split('T')[0];
+                }
+                
+                updateUI();
+            }
+            
+            cancelQuickEdit();
+        }
+
+        // 取消快速编辑 (保留，用于加工和成品数量)
+        function cancelQuickEdit() {
+            if (!quickEditState.isEditing) return;
+
+            const input = document.querySelector('.quick-edit-input');
+            if (input) {
+                input.remove();
+            }
+
+            quickEditState.isEditing = false;
+            quickEditState.element = null;
+            quickEditState.originalValue = null;
+        }
+
+        // 移除 更新主要加工数量 (因为移除了加减按钮)
+        // function updateProcessingQuantity(productId, stepId, type, change) {
+        //     const steps = appData.productionSteps[productId];
+        //     const step = steps.find(s => s.id === stepId);
+        //     if (step) {
+        //         if (!step.processing) {
+        //             step.processing = { earHook: 0, earClip: 0, other: 0 };
+        //         }
+                
+        //         const newQuantity = Math.max(0, step.processing[type] + change);
+        //         step.processing[type] = newQuantity;
+                
+        //         const hasQuantity = Object.values(step.processing).some(q => q > 0);
+        //         if (hasQuantity && !step.date) {
+        //             step.date = new Date().toISOString().split('T')[0];
+        //         }
+                
+        //         updateUI();
+        //     }
+        // }
+
+        // 移除 更新质量检测数量 (因为移除了加减按钮)
+        // function updateQualityQuantity(productId, stepId, type, change) {
+        //     const steps = appData.productionSteps[productId];
+        //     const step = steps.find(s => s.id === stepId);
+        //     if (step) {
+        //         if (!step.quality) {
+        //             step.quality = { earHook: 0, earClip: 0, other: 0 };
+        //         }
+                
+        //         const newQuantity = Math.max(0, step.quality[type] + change);
+        //         step.quality[type] = newQuantity;
+                
+        //         const hasQuantity = Object.values(step.quality).some(q => q > 0);
+        //         if (hasQuantity && !step.date) {
+        //             step.date = new Date().toISOString().split('T')[0];
+        //         }
+                
+        //         updateUI();
+        //     }
+        // }
+
+        // 打开主要加工编辑模态框
+        function openProcessingModal(productId, stepId) {
+            const steps = appData.productionSteps[productId];
+            const step = steps.find(s => s.id === stepId);
+            const product = appData.products.find(p => p.id === productId);
+            
+            if (step && product) {
+                appData.currentEditingStep = { productId, stepId };
+                
+                const processing = step.processing || { earHook: 0, earClip: 0, other: 0 };
+                
+                document.getElementById('processingModalTitle').textContent = `编辑: ${product.name} - ${step.name}`;
+                document.getElementById('editEarHook').value = processing.earHook;
+                document.getElementById('editEarClip').value = processing.earClip;
+                document.getElementById('editOther').value = processing.other;
+                
+                document.getElementById('processingModal').classList.remove('hidden');
+            }
+        }
+
+        // 关闭主要加工编辑模态框
+        function closeProcessingModal() {
+            document.getElementById('processingModal').classList.add('hidden');
+            appData.currentEditingStep = null;
+        }
+
+        // 保存主要加工编辑
+        function saveProcessingEdit() {
+            if (appData.currentEditingStep) {
+                const { productId, stepId } = appData.currentEditingStep;
+                const steps = appData.productionSteps[productId];
+                const step = steps.find(s => s.id === stepId);
+                
+                if (step) {
+                    step.processing = {
+                        earHook: Math.max(0, parseInt(document.getElementById('editEarHook').value) || 0),
+                        earClip: Math.max(0, parseInt(document.getElementById('editEarClip').value) || 0),
+                        other: Math.max(0, parseInt(document.getElementById('editOther').value) || 0)
+                    };
+                    
+                    const hasQuantity = Object.values(step.processing).some(q => q > 0);
+                    if (hasQuantity && !step.date) {
+                        step.date = new Date().toISOString().split('T')[0];
+                    }
+                    
+                    updateUI();
+                    closeProcessingModal();
+                }
+            }
+        }
+
+        // 打开成品编辑模态框
+        function openQualityModal(productId, stepId) {
+            const steps = appData.productionSteps[productId];
+            const step = steps.find(s => s.id === stepId);
+            const product = appData.products.find(p => p.id === productId);
+            
+            if (step && product) {
+                appData.currentEditingStep = { productId, stepId };
+                
+                const quality = step.quality || { earHook: 0, earClip: 0, other: 0 };
+                
+                document.getElementById('qualityModalTitle').textContent = `编辑: ${product.name} - ${step.name}`;
+                document.getElementById('editQualityEarHook').value = quality.earHook;
+                document.getElementById('editQualityEarClip').value = quality.earClip;
+                document.getElementById('editQualityOther').value = quality.other;
+                
+                document.getElementById('qualityModal').classList.remove('hidden');
+            }
+        }
+
+        // 关闭成品编辑模态框
+        function closeQualityModal() {
+            document.getElementById('qualityModal').classList.add('hidden');
+            appData.currentEditingStep = null;
+        }
+
+        // 保存成品编辑
+        function saveQualityEdit() {
+            if (appData.currentEditingStep) {
+                const { productId, stepId } = appData.currentEditingStep;
+                const steps = appData.productionSteps[productId];
+                const step = steps.find(s => s.id === stepId);
+                
+                if (step) {
+                    step.quality = {
+                        earHook: Math.max(0, parseInt(document.getElementById('editQualityEarHook').value) || 0),
+                        earClip: Math.max(0, parseInt(document.getElementById('editQualityEarClip').value) || 0),
+                        other: Math.max(0, parseInt(document.getElementById('editQualityOther').value) || 0)
+                    };
+                    
+                    const hasQuantity = Object.values(step.quality).some(q => q > 0);
+                    if (hasQuantity && !step.date) {
+                        step.date = new Date().toISOString().split('T')[0];
+                    }
+                    
+                    updateUI();
+                    closeQualityModal();
+                }
+            }
+        }
+
+        // 原材料相关函数
+        function openMaterialsModal(productId, stepId) {
+            const steps = appData.productionSteps[productId];
+            const step = steps.find(s => s.id === stepId);
+            const product = appData.products.find(p => p.id === productId);
+            
+            if (step && product) {
+                appData.currentEditingStep = { productId, stepId };
+                
+                document.getElementById('materialsModalTitle').textContent = `编辑: ${product.name} - ${step.name}`;
+                updateMaterialsEditor(step.materials || []);
+                
+                document.getElementById('materialsModal').classList.remove('hidden');
+            }
+        }
+
+        function updateMaterialsEditor(materials) {
+            const container = document.getElementById('materialsEditorList');
+            container.innerHTML = '';
+            
+            materials.forEach((material, index) => {
+                const item = document.createElement('div');
+                item.className = 'material-editor-item';
+                item.innerHTML = `
+                    <input type="text" value="${material.name}" placeholder="材料名称" data-index="${index}" data-field="name">
+                    <!-- 移除数量输入框 -->
+                    <!-- <input type="number" value="${material.quantity}" placeholder="数量" min="0" data-index="${index}" data-field="quantity"> -->
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" ${material.needRestock ? 'checked' : ''} data-index="${index}" data-field="needRestock">
+                        需补货
+                    </label>
+                    <button class="delete-material-btn" onclick="deleteMaterialItem(${index})">删除</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addMaterialItem() {
+            const container = document.getElementById('materialsEditorList');
+            const index = container.children.length;
+            
+            const item = document.createElement('div');
+            item.className = 'material-editor-item';
+            item.innerHTML = `
+                <input type="text" value="" placeholder="材料名称" data-index="${index}" data-field="name">
+                <!-- 移除数量输入框 -->
+                <!-- <input type="number" value="0" placeholder="数量" min="0" data-index="${index}" data-field="quantity"> -->
+                <label style="display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" data-index="${index}" data-field="needRestock">
+                    需补货
+                </label>
+                <button class="delete-material-btn" onclick="deleteMaterialItem(${index})">删除</button>
+            `;
+            container.appendChild(item);
+        }
+
+        function deleteMaterialItem(index) {
+            const container = document.getElementById('materialsEditorList');
+            const items = container.children;
+            if (items[index]) {
+                items[index].remove();
+                
+                Array.from(container.children).forEach((item, newIndex) => {
+                    const inputs = item.querySelectorAll('input');
+                    const deleteBtn = item.querySelector('.delete-material-btn');
+                    inputs.forEach(input => {
+                        input.setAttribute('data-index', newIndex);
+                    });
+                    deleteBtn.setAttribute('onclick', `deleteMaterialItem(${newIndex})`);
+                });
+            }
+        }
+
+        function closeMaterialsModal() {
+            document.getElementById('materialsModal').classList.add('hidden');
+            appData.currentEditingStep = null;
+        }
+
+        function saveMaterialsEdit() {
+            if (appData.currentEditingStep) {
+                const { productId, stepId } = appData.currentEditingStep;
+                const steps = appData.productionSteps[productId];
+                const step = steps.find(s => s.id === stepId);
+                
+                if (step) {
+                    const container = document.getElementById('materialsEditorList');
+                    const materials = [];
+                    
+                    Array.from(container.children).forEach(item => {
+                        const nameInput = item.querySelector('input[data-field="name"]');
+                        // const quantityInput = item.querySelector('input[data-field="quantity"]'); // 移除数量
+                        const restockInput = item.querySelector('input[data-field="needRestock"]');
+                        
+                        if (nameInput.value.trim()) {
+                            materials.push({
+                                name: nameInput.value.trim(),
+                                // quantity: Math.max(0, parseInt(quantityInput.value) || 0), // 移除数量
+                                needRestock: restockInput.checked
+                            });
+                        }
+                    });
+                    
+                    step.materials = materials;
+                    
+                    if (materials.length > 0 && !step.date) {
+                        step.date = new Date().toISOString().split('T')[0];
+                    }
+                    
+                    updateUI();
+                    closeMaterialsModal();
+                }
+            }
+        }
+
+        // 图片上传相关函数
+        function triggerImageUpload() {
+            document.getElementById('imageUploadInput').click();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imageData = e.target.result;
+                        
+                        // 显示预览
+                        const preview = document.getElementById('imagePreview');
+                        const uploadText = document.getElementById('uploadText');
+                        const uploadArea = document.querySelector('.image-upload-area');
+                        
+                        preview.src = imageData;
+                        preview.classList.remove('hidden');
+                        uploadText.textContent = '图片上传成功！点击更换';
+                        uploadText.className = 'upload-text success';
+                        uploadArea.classList.add('has-image');
+                        
+                        // 临时存储，保存时再写入产品数据
+                        appData.tempProductImage = imageData;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('请选择有效的图片文件（JPG、PNG等）');
+                }
+            }
+        }
+
+        // 产品编辑相关函数
+        function openProductEditModal(productId) {
+            const product = appData.products.find(p => p.id === productId);
+            if (product) {
+                appData.currentEditingProduct = productId;
+                
+                document.getElementById('productModalTitle').textContent = `编辑产品: ${product.name}`;
+                document.getElementById('editProductName').value = product.name;
+                document.getElementById('editProductCategory').value = product.category;
+                document.getElementById('editProductStatus').value = product.status;
+                document.getElementById('editProductUrl').value = product.url || '';
+                
+                // 设置图片预览
+                const preview = document.getElementById('imagePreview');
+                const uploadText = document.getElementById('uploadText');
+                const uploadArea = document.querySelector('.image-upload-area');
+                
+                if (product.image) {
+                    preview.src = product.image;
+                    preview.classList.remove('hidden');
+                    uploadText.textContent = '点击更换图片';
+                    uploadText.className = 'upload-text success';
+                    uploadArea.classList.add('has-image');
+                    appData.tempProductImage = product.image;
+                } else {
+                    preview.classList.add('hidden');
+                    uploadText.innerHTML = '📸 点击上传产品图片<br><small>支持 JPG、PNG 格式</small>';
+                    uploadText.className = 'upload-text';
+                    uploadArea.classList.remove('has-image');
+                    appData.tempProductImage = '';
+                }
+                
+                document.getElementById('productEditModal').classList.remove('hidden');
+            }
+        }
+
+        function closeProductEditModal() {
+            document.getElementById('productEditModal').classList.add('hidden');
+            appData.currentEditingProduct = null;
+            appData.tempProductImage = null;
+            
+            // 重置上传区域
+            const preview = document.getElementById('imagePreview');
+            const uploadText = document.getElementById('uploadText');
+            const uploadArea = document.querySelector('.image-upload-area');
+            const fileInput = document.getElementById('imageUploadInput');
+            
+            preview.classList.add('hidden');
+            uploadText.innerHTML = '📸 点击上传产品图片<br><small>支持 JPG、PNG 格式</small>';
+            uploadText.className = 'upload-text';
+            uploadArea.classList.remove('has-image');
+            fileInput.value = '';
+        }
+
+        function saveProductEdit() {
+            if (appData.currentEditingProduct) {
+                const product = appData.products.find(p => p.id === appData.currentEditingProduct);
+                if (product) {
+                    product.name = document.getElementById('editProductName').value;
+                    product.category = document.getElementById('editProductCategory').value;
+                    product.status = document.getElementById('editProductStatus').value;
+                    product.url = document.getElementById('editProductUrl').value;
+                    
+                    // 保存图片
+                    if (appData.tempProductImage !== undefined) {
+                        product.image = appData.tempProductImage;
+                    }
+                    
+                    updateUI();
+                    closeProductEditModal();
+                }
+            }
+        }
+
+        function openProductLink(productId) {
+            const product = appData.products.find(p => p.id === productId);
+            if (product && product.url) {
+                window.open(product.url, '_blank');
+            } else {
+                alert('该产品尚未设置商品链接，请先编辑产品信息');
+            }
+        }
+
+        function addNewProduct() {
+            const name = prompt('请输入产品名称:', '新饰品');
+            if (name) {
+                const newId = Math.max(...appData.products.map(p => p.id), 0) + 1;
+                const newProduct = {
+                    id: newId,
+                    name: name,
+                    url: '',
+                    category: '饰品',
+                    status: '设计中',
+                    image: '',
+                    order: appData.products.length,
+                    remarks: '' // 新增产品时初始化备注
+                };
+                appData.products.push(newProduct);
+                appData.productionSteps[newId] = [
+                    { id: 1, name: '原材料采购', materials: [], date: '', emoji: '📦' },
+                    { id: 2, name: '加工', processing: { earHook: 0, earClip: 0, other: 0 }, date: '', emoji: '⚙️' },
+                    { id: 3, name: '成品', quality: { earHook: 0, earClip: 0, other: 0 }, date: '', emoji: '🔍' }
+                ];
+                updateUI();
+            }
+        }
+
+        // 导出JSON功能 (已禁用)
+        // function exportData() {
+        //     const data = {
+        //         ...appData,
+        //         exportDate: new Date().toISOString(),
+        //         version: '1.0'
+        //     };
+        //     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        //     const url = URL.createObjectURL(blob);
+        //     const a = document.createElement('a');
+        //     a.href = url;
+        //     a.download = `饰品生产数据_${new Date().toISOString().split('T')[0]}.json`;
+        //     document.body.appendChild(a);
+        //     a.click();
+        //     document.body.removeChild(a);
+        //     URL.revokeObjectURL(url);
+        //     alert('JSON数据导出成功！');
+        // }
+
+        // 导入数据功能 (已禁用)
+        // function importData(event) {
+        //     const file = event.target.files[0];
+        //     if (file) {
+        //         const reader = new FileReader();
+        //         reader.onload = (e) => {
+        //             try {
+        //                 const data = JSON.parse(e.target.result);
+        //                 if (data.products && data.productionSteps) {
+        //                     appData = { ...appData, ...data };
+        //                     updateUI();
+        //                     alert('数据导入成功！');
+        //                 } else {
+        //                     alert('数据格式不正确！');
+        //                 }
+        //             } catch (error) {
+        //                 alert('文件格式错误，导入失败！');
+        //             }
+        //         };
+        //         reader.readAsText(file);
+        //     }
+        //     event.target.value = '';
+        // }
+
+        // 备注相关函数
+        function openRemarksModal(productId) {
+            const product = appData.products.find(p => p.id === productId);
+            if (product) {
+                appData.currentEditingRemarksProductId = productId;
+                document.getElementById('remarksModalTitle').textContent = `编辑备注: ${product.name}`;
+                document.getElementById('editRemarks').value = product.remarks || '';
+                document.getElementById('remarksModal').classList.remove('hidden');
+            }
+        }
+
+        function closeRemarksModal() {
+            document.getElementById('remarksModal').classList.add('hidden');
+            appData.currentEditingRemarksProductId = null;
+        }
+
+        function saveRemarksEdit() {
+            if (appData.currentEditingRemarksProductId !== null) {
+                const product = appData.products.find(p => p.id === appData.currentEditingRemarksProductId);
+                if (product) {
+                    product.remarks = document.getElementById('editRemarks').value;
+                    updateUI();
+                    closeRemarksModal();
+                }
+            }
+        }
+
+        // 新增：从模态框中删除产品
+        function deleteProductFromModal() {
+            if (appData.currentEditingProduct) {
+                if (confirm('确定要删除这个产品吗？这将同时删除所有相关的生产数据。')) {
+                    deleteProduct(appData.currentEditingProduct); // 调用现有删除函数
+                    closeProductEditModal(); // 关闭模态框
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
